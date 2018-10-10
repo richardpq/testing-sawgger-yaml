@@ -153,16 +153,7 @@ paths:
       summary: Actions that can be applied to a workload
       description: Optional extended description in CommonMark or HTML.
       requestBody:
-        description: Optional description in *Markdown*
-        required: true
-        content:
-          application/json:
-            schema:
-              oneOf:
-                - $ref: '#/components/requestBodies/StartStopWorkload'
-                - $ref: '#/components/requestBodies/MoveWorkload'
-                - $ref: '#/components/requestBodies/AttachNetwork'
-                - $ref: '#/components/requestBodies/DetachNetwork'
+        $ref: '#/components/requestBodies/WorkloadActions'
       responses:
         '200':
           description: Action performed
@@ -198,8 +189,6 @@ components:
               - $ref: '#/components/schemas/RequestOnPremiseNode'
               - $ref: '#/components/schemas/RequestCloudNode'
           example:
-            hostUsername: htbase
-            hostPassword: Juk3password
             instanceType: aws
             cloudDetails:
               instanceRegion: us-east-1
@@ -211,73 +200,17 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/WorkloadBody'
-    StartStopWorkload:
-      description: payload for start and stop workloads
+    WorkloadActions:
+      description: A JSON object containing workload actions
       required: true
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              action:
-                type: string
-                enum: [start, stop]
-            required:
-              - action
-    MoveWorkload:
-      description: payload for start and stop workloads
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              action:
-                type: string
-                enum: [move]
-              targetNode:
-                type: string
-            required:
-              - action
-              - targetNode
-    AttachNetwork:
-      description: payload for attaching a internal network (br0) to a workload
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              action:
-                type: string
-                enum: ['attach network']
-              containerName:
-                type: string
-              portName:
-                type: string
-            required:
-              - action
-              - containerName
-              - portName
-    DetachNetwork:
-      description: payload for detaching a internal network (br0) of a workload
-      required: true
-      content:
-        application/json:
-          schema:
-            type: object
-            properties:
-              action:
-                type: string
-                enum: ['dettach network']
-              containerName:
-                type: string
-              portName:
-                type: string
-            required:
-              - action
-              - containerName
-              - portName
+            oneOf:
+              - $ref: '#/components/schemas/StartStopWorkload'
+              - $ref: '#/components/schemas/MoveWorkload'
+              - $ref: '#/components/schemas/AttachNetwork'
+              - $ref: '#/components/schemas/DetachNetwork'
   responses:
     ResourceDeleted:
       description: The resource has been deleted
@@ -326,6 +259,53 @@ components:
             status: 500
             title: There was an internal error on the system
   schemas:
+    StartStopWorkload:
+      type: object
+      properties:
+        action:
+            type: string
+            enum: [start, stop]
+      required:
+        - action
+    MoveWorkload:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [move]
+        targetNode:
+          type: string
+      required:
+        - action
+        - targetNode
+    AttachNetwork:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: ['attach network']
+        containerName:
+          type: string
+        portName:
+          type: string
+      required:
+        - action
+        - containerName
+        - portName
+    DetachNetwork:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: ['dettach network']
+        containerName:
+          type: string
+        portName:
+          type: string
+      required:
+        - action
+        - containerName
+        - portName
     Node:
       type: object
       properties:
@@ -374,13 +354,14 @@ components:
         instanceType:
           type: string
           enum: [aws, azure, gcp]
-          example: 'aws'
+          description: The instance type where the node will be created.
         cloudDetails:
           type: object
           properties:
             instanceRegion:
               type: string
               example: 'us-east-1'
+              description: Region/Location/Zone available on cloud providers. **If a region is not available on the system, an error will be retrieved**
             instanceSize:
               type: string
               example: 't2.micro'

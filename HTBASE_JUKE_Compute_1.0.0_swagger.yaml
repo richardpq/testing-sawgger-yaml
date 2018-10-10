@@ -1,0 +1,475 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Compute and Workload services from Juke's API platform
+  description: Show the calls related to Nodes and Workloads (on-premise and cloud).
+paths:
+  /compute/nodes:
+    parameters:
+      - $ref: '#/components/parameters/allInstanceTypesInQuery'
+    get:
+      summary: List of all nodes (on-premise and cloud)
+      description: Optional extended description in CommonMark or HTML.
+      responses:
+        '200':
+          description: List of Nodes' objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Node'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+          
+  /compute/nodes/{node_name}:
+    parameters:
+      - $ref: '#/components/parameters/nodeNameInPath'
+    get:
+      summary: Retrieve information of a node.
+      description: Optional extended description in CommonMark or HTML.
+      responses:
+        '200':
+          description: Node information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Node'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Create a new node
+      description: Optional extended description in CommonMark or HTML.
+      requestBody:
+        $ref: '#/components/requestBodies/Nodes'
+      responses:
+        '201':
+          $ref: '#/components/responses/ResourceCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      summary: Delete a node
+      description: Delete a node
+      responses:
+        '204':
+          $ref: '#/components/responses/ResourceDeleted'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  
+  /compute/workloads:
+    get:
+      summary: Retrieve a list of all workloads.
+      description: Optional extended description in CommonMark or HTML.
+      responses:
+        '200':
+          description: List workload's objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workload'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+                  
+  /compute/nodes/{node_name}/workloads:
+    parameters:
+      - $ref: '#/components/parameters/nodeNameInPath'
+    get:
+      summary: Retrieve all workloads from {node_name}
+      description: Optional extended description in CommonMark or HTML.
+      responses:
+        '200':
+          description: List of workloads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Workload'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+          
+  /compute/nodes/{node_name}/workloads/{workload_name}:
+    parameters:
+      - $ref: '#/components/parameters/nodeNameInPath'
+      - in: path
+        name: workload_name
+        required: true
+        schema:
+            type: string
+    get:
+      summary: Retrieve details about workload in the node provided
+      responses:
+        '200':
+          description: A Workload object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workload'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      summary: Create a new workload.
+      description: Create a new workload.
+      requestBody:
+        $ref: '#/components/requestBodies/WorkloadBody'
+      responses:
+        '201':
+          $ref: '#/components/responses/ResourceCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      summary: Actions that can be applied to a workload
+      description: Optional extended description in CommonMark or HTML.
+      requestBody:
+        description: Optional description in *Markdown*
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/requestBodies/StartStopWorkload'
+                - $ref: '#/components/requestBodies/MoveWorkload'
+                - $ref: '#/components/requestBodies/AttachNetwork'
+                - $ref: '#/components/requestBodies/DetachNetwork'
+      responses:
+        '200':
+          description: Action performed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      description: Delete a workload
+      responses:
+        '204':
+          $ref: '#/components/responses/ResourceDeleted'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+          
+components:
+  requestBodies:
+    Nodes:
+      description: A JSON object containing properties for On-Premise and Cloud Nodes.
+      required: true
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/RequestOnPremiseNode'
+              - $ref: '#/components/schemas/RequestCloudNode'
+          example:
+            hostUsername: htbase
+            hostPassword: Juk3password
+            instanceType: aws
+            cloudDetails:
+              instanceRegion: us-east-1
+              instanceSize: t2.micro
+    WorkloadBody:
+      description: A JSON object containing workload request
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/WorkloadBody'
+    StartStopWorkload:
+      description: payload for start and stop workloads
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              action:
+                type: string
+                enum: [start, stop]
+            required:
+              - action
+    MoveWorkload:
+      description: payload for start and stop workloads
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              action:
+                type: string
+                enum: [move]
+              targetNode:
+                type: string
+            required:
+              - action
+              - targetNode
+    AttachNetwork:
+      description: payload for attaching a internal network (br0) to a workload
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              action:
+                type: string
+                enum: ['attach network']
+              containerName:
+                type: string
+              portName:
+                type: string
+            required:
+              - action
+              - containerName
+              - portName
+    DetachNetwork:
+      description: payload for detaching a internal network (br0) of a workload
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              action:
+                type: string
+                enum: ['dettach network']
+              containerName:
+                type: string
+              portName:
+                type: string
+            required:
+              - action
+              - containerName
+              - portName
+  responses:
+    ResourceDeleted:
+      description: The resource has been deleted
+      content:
+        application/problem+json:
+          schema:
+            type: string
+    ResourceCreated:
+      description: Resource has been created
+      headers:
+        Location:
+          description: A link to retrieve information of the resource created
+          schema:
+            type: string
+    BadRequest:
+      description: Invalid payload
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/BadRequestError'
+    Forbidden:
+      description: You don't have permission to access this resource
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+          example:
+            status: 403
+            title: You don't have permission to access this resource
+    NotFound:
+      description: The specified resource was not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+          example:
+            status: 404
+            title: The specified resource was not found
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/GeneralError'
+          example:
+            status: 500
+            title: There was an internal error on the system
+  schemas:
+    Node:
+      type: object
+      properties:
+        name:
+          type: string
+          example: myNodeName
+          description: The name of the node (this is unique among onpremise and cloud).
+        instanceType:
+          type: string
+          example: aws
+          description: Type of instance [aws, azure, gcp or onpremise]
+        instanceRegion:
+          type: string
+          example: us-east-1
+          description: Region/zone/location of the instance, in case of *onpremise*, this will be empty.
+        ipAddress:
+          type: string
+          example: 192.168.0.1
+          description: Ip address inside juke's network.
+    RequestOnPremiseNode:
+      description: Properties for creating On-Premise node
+      type: object
+      properties:
+        hostUsername:
+          type: string
+          example: 'root'
+        hostPassword:
+          type: string
+          example: 'mypassword'
+        ipAddress:
+          type: string
+          example: '192.168.0.1'
+        instanceType:
+          type: string
+          enum: [onpremise]
+          example: 'onpremise'
+      required:
+        - ipAddress
+        - hostUsername
+        - hostPassword
+        - instanceType
+    RequestCloudNode:
+      description: Properties for creating Cloud node
+      type: object
+      properties:
+        instanceType:
+          type: string
+          enum: [aws, azure, gcp]
+          example: 'aws'
+        cloudDetails:
+          type: object
+          properties:
+            instanceRegion:
+              type: string
+              example: 'us-east-1'
+            instanceSize:
+              type: string
+              example: 't2.micro'
+          required:
+            - instanceRegion
+            - instanceSize
+      required:
+        - instanceType
+        - cloudDetails
+    WorkloadBody:
+      type: object
+      properties:
+        imageName: 
+          type: string
+        storageType:
+          type: string
+          enum: [ephemeral, persistent]
+        volumenSize:
+          type: integer
+          minimum: 5
+      required:
+        - imageName
+        - storageType
+    Workload:
+      allOf:
+        - $ref: '#/components/schemas/WorkloadBody'
+        - type: object
+          properties:
+            name:
+              type: string
+            state:
+              type: string
+              enum: [Running, Stopped]
+            ipv4:
+              type: string
+            ipv6:
+              type: string
+            nodeName:
+              type: string
+        
+    GeneralError:
+      type: object
+      description: Error response that follows the application/problem+json specification. [Api Problem](https://tools.ietf.org/html/rfc7807)
+      properties:
+        status:
+          type: integer
+        title:
+          type: string
+      required:
+        - type
+        - title
+        - status
+    BadRequestError:
+      allOf: # Combines the GeneralError and the inline model
+        - $ref: '#/components/schemas/GeneralError'
+        - type: object
+          properties:
+            invalidParameters:
+              type: array
+              items:
+                type: object
+                properties:
+                  parameterName:
+                    type: string
+                  reason:
+                    type: string
+          required:
+            - invalidParameters
+            
+  parameters:
+    nodeNameInPath:
+      name: node_name
+      required: true
+      in: path
+      description: "The name of the node, which should meet the following requirements: <ul><li>Cannot be longer than 64 characters</li><li>Cannot start with number</li><li>All letters must be lowercase</li><li>Only ASCII characters are allowed</li></ul>"
+      schema:
+        type: string
+    allInstanceTypesInQuery:
+      name: instanceType
+      required: false
+      in: query
+      schema:
+        type: string
+        enum: [onpremise, aws, azure, gcp]
+      description: Filters the list by instance type
+    cloudInstanceTypesParam:
+      name: cloud_instance_type
+      required: true
+      in: path
+      schema:
+        type: string
+        enum: [aws, azure, gcp]
